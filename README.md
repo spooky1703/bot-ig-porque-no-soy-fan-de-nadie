@@ -1,8 +1,8 @@
-# 📱 Instagram Non-Followers Detector
+# DETECTOR DE FALSOS REALES HDLV
 
 Bot para identificar cuentas de Instagram que sigues pero **no te siguen de vuelta**.
 
-## 🚀 Inicio Rápido
+## Inicio Rápido
 
 ```bash
 # 1. Instalar dependencias
@@ -33,7 +33,7 @@ bot-ig/
 └── output/              # Archivos generados
 ```
 
-## 🔄 Flujo del Programa
+## Flujo del Programa (lo unico hecho por ia antes de que critiquen los emojis)
 
 ```mermaid
 flowchart TD
@@ -50,7 +50,7 @@ flowchart TD
     K --> L[✅ Fin]
 ```
 
-## 📊 Salida
+## Salida
 
 El bot genera archivos en `output/`:
 
@@ -63,9 +63,9 @@ El bot genera archivos en `output/`:
 
 ```
 ============================================================
-📊 NON-FOLLOWERS REPORT
+ FALSOS REALES
 ============================================================
-Total non-followers: 15
+Total de falsos: 15
 ------------------------------------------------------------
   1. @cuenta_ejemplo1
   2. @cuenta_ejemplo2 🔒 (Cuenta Privada)
@@ -73,7 +73,7 @@ Total non-followers: 15
 ============================================================
 ```
 
-## ⚙️ Configuración
+## Configuración
 
 Edita el archivo `.env`:
 
@@ -89,13 +89,10 @@ MAX_DELAY=3.0
 LOG_LEVEL=INFO
 ```
 
-## ⚠️ Limitaciones
+##  Limitaciones
 
 - **Rate limits**: Instagram limita ~200 requests/hora
 - **Detección de bots**: Usa delays aleatorios automáticamente
 - **2FA**: Soportado, pedirá el código por consola
 - **Recomendación**: Ejecutar máximo 1-2 veces al día
 
-## 📝 Licencia
-
-MIT - Uso bajo tu propia responsabilidad.
