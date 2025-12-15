@@ -1,93 +1,84 @@
-#!/usr/bin/env python3
 """
-Bot IG - Instagram Non-Followers Detector
-==========================================
+Uso:
+    1. Copia .env.example a .env y llena tus datos
+    2. Instala lo necesario: pip install -r requirements.txt
+    3. Corre: python main.py
 
-This bot identifies Instagram accounts that you follow but don't follow you back.
-
-Usage:
-    1. Copy .env.example to .env and fill in your credentials
-    2. Install dependencies: pip install -r requirements.txt
-    3. Run: python main.py
-
-Author: Bot IG
+git: https://github.com/spooky1703
 """
 
 import sys
-from modules.auth import InstagramAuth
-from modules.scraper import InstagramScraper
-from modules.analyzer import find_non_followers
-from modules.exporter import export_all
-from utils.logger import get_logger
+from modules.entrada import EntradaInstagram
+from modules.buscador import BuscadorInstagram
+from modules.comparador import encontrar_no_seguidores
+from modules.guardador import guardar_todo
+from utils.registro import obtener_registro
 
-logger = get_logger(__name__)
+registro = obtener_registro(__name__)
 
 
-def print_banner():
-    """Print the application banner."""
-    banner = """
+def mostrar_titulo():
+    titulo = """
     ╔═══════════════════════════════════════════════════════════╗
     ║                                                           ║
-    ║   📱 Instagram Non-Followers Detector                     ║
+    ║    Detector de falsos reales                              ║
     ║   ─────────────────────────────────────                   ║
-    ║   Find accounts that don't follow you back                ║
+    ║   Encuentra cuentas que no te siguen de vuelta            ║
     ║                                                           ║
     ╚═══════════════════════════════════════════════════════════╝
     """
-    print(banner)
+    print(titulo)
 
 
-def main():
-    """Main entry point for the bot."""
-    print_banner()
+def principal():
+    mostrar_titulo()
     
-    # Step 1: Authentication
-    logger.info("Starting authentication...")
-    auth = InstagramAuth()
+    # Paso 1: Entrar a la cuenta
+    registro.info("Iniciando entrada a la cuenta...")
+    entrada = EntradaInstagram()
     
-    if not auth.login():
-        logger.error("Authentication failed. Please check your credentials.")
+    if not entrada.entrar():
+        registro.error("No se pudo entrar. Revisa tus datos.")
         sys.exit(1)
     
     try:
-        # Step 2: Scrape data
-        logger.info("Starting data collection...")
-        scraper = InstagramScraper(auth.get_client(), auth.user_id)
-        following, followers = scraper.get_all_data()
+        # Paso 2: Buscar datos
+        registro.info("Buscando datos...")
+        buscador = BuscadorInstagram(entrada.obtener_cliente(), entrada.id_usuario)
+        siguiendo, seguidores = buscador.obtener_todos_los_datos()
         
-        if not following:
-            logger.warning("Could not fetch following list")
+        if not siguiendo:
+            registro.warning("No se pudo obtener la lista de seguidos")
             sys.exit(1)
         
-        if not followers:
-            logger.warning("Could not fetch followers list")
+        if not seguidores:
+            registro.warning("No se pudo obtener la lista de seguidores")
             sys.exit(1)
         
-        # Step 3: Analyze
-        logger.info("Analyzing data...")
-        non_followers = find_non_followers(following, followers)
+        # Paso 3: Comparar
+        registro.info("Comparando datos...")
+        no_seguidores = encontrar_no_seguidores(siguiendo, seguidores)
         
-        # Step 4: Export results
-        logger.info("Exporting results...")
-        files = export_all(
-            non_followers,
-            following_count=len(following),
-            followers_count=len(followers)
+        # Paso 4: Guardar resultados
+        registro.info("Guardando resultados...")
+        archivos = guardar_todo(
+            no_seguidores,
+            cantidad_siguiendo=len(siguiendo),
+            cantidad_seguidores=len(seguidores)
         )
         
-        # Summary
-        print("\n📁 Files generated:")
-        print(f"   • TXT: {files['txt']}")
-        print(f"   • JSON: {files['json']}")
-        print("\n✅ Analysis complete!")
+        print("\nArchivos creados:")
+        print(f"   - TXT: {archivos['txt']}")
+        print(f"   - JSON: {archivos['json']}")
+        print("\nListo!")
         
     except KeyboardInterrupt:
-        logger.info("\nOperation cancelled by user")
+        registro.info("\nCancelado por el usuario")
         sys.exit(0)
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
+    except Exception as error:
+        registro.error(f"Ocurrio un error: {error}")
         sys.exit(1)
 
 
 if __name__ == "__main__":
-    main()
+    principal()
