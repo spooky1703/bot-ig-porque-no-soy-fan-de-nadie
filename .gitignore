@@ -1,0 +1,33 @@
+# Bot IG - Instagram Non-Followers Detector
+
+# Ignorar credenciales
+.env
+
+# Sesiones de Instagram
+session.json
+*.session
+
+# Output generado
+output/*.txt
+output/*.json
+!output/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
