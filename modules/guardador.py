@@ -1,113 +1,171 @@
+"""
+Bot IG - Módulo de Guardado y Reportes
+Genera reportes en pantalla, TXT y JSON con datos completos.
+"""
+
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 from config import CARPETA_SALIDA
 from utils.registro import obtener_registro
 
 registro = obtener_registro(__name__)
+
+# Colores
+VERDE = "\033[32m"
+ROJO = "\033[31m"
+AMARILLO = "\033[33m"
+CYAN = "\033[36m"
+GRIS = "\033[90m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
 
 
 def _obtener_fecha() -> str:
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
-def mostrar_en_pantalla(no_seguidores: List[dict], mostrar_detalles: bool = True):
+def mostrar_dashboard(estadisticas: dict):
+    """Muestra un dashboard visual con las estadísticas de la cuenta."""
+    print(f"\n{BOLD}{'─' * 60}{RESET}")
+    print(f"{BOLD}  📊  RESUMEN DE TU CUENTA{RESET}")
+    print(f"{BOLD}{'─' * 60}{RESET}\n")
 
-    print("\n" + "=" * 60)
-    print("REPORTE DE NO SEGUIDORES")
-    print("=" * 60)
-    print(f"Total de no seguidores: {len(no_seguidores)}")
-    print("-" * 60)
-    
-    if not no_seguidores:
-        print("Todos los que sigues te siguen de vuelta!")
-        print("=" * 60 + "\n")
+    total_seg = estadisticas["total_seguidos"]
+    total_segr = estadisticas["total_seguidores"]
+    ratio = estadisticas["ratio_seguidores"]
+    recip = estadisticas["porcentaje_reciprocidad"]
+
+    # Stats principales
+    print(f"  Seguidos      {CYAN}{total_seg:>6}{RESET}")
+    print(f"  Seguidores    {CYAN}{total_segr:>6}{RESET}")
+    print(f"  {'─' * 25}")
+    print(f"  Mutuos        {VERDE}{estadisticas['total_mutuos']:>6}{RESET}")
+    print(f"  No te siguen  {ROJO}{estadisticas['total_no_seguidores']:>6}{RESET}")
+    print(f"  Fans          {AMARILLO}{estadisticas['total_fans']:>6}{RESET}")
+    print()
+    print(f"  Ratio         {CYAN}{ratio}{RESET}")
+    print(f"  Reciprocidad  {CYAN}{recip}%{RESET}")
+    print(f"\n{'─' * 60}\n")
+
+
+def mostrar_lista(usuarios: List[dict], titulo: str, color: str = RESET, limite: int = 0):
+    """Muestra una lista de usuarios con formato."""
+    total = len(usuarios)
+
+    print(f"\n{BOLD}{'═' * 60}{RESET}")
+    print(f"  {color}{BOLD}{titulo}{RESET}")
+    print(f"  {GRIS}Total: {total}{RESET}")
+    print(f"{'═' * 60}")
+
+    if not usuarios:
+        print(f"\n  {VERDE}  ¡Lista vacía!{RESET}\n")
+        print(f"{'═' * 60}\n")
         return
-    
-    for i, usuario in enumerate(no_seguidores, 1):
-        nombre_usuario = usuario['usuario']
-        nombre_completo = usuario.get('nombre', '')
-        verificado = "[V]" if usuario.get('es_verificado') else ""
-        privado = "[P]" if usuario.get('es_privado') else ""
-        
-        if mostrar_detalles and nombre_completo:
-            print(f"{i:3}. @{nombre_usuario} {verificado}{privado} ({nombre_completo})")
-        else:
-            print(f"{i:3}. @{nombre_usuario} {verificado}{privado}")
-    
-    print("=" * 60 + "\n")
+
+    mostrar = usuarios[:limite] if limite > 0 else usuarios
+
+    for i, usuario in enumerate(mostrar, 1):
+        nombre_usuario = usuario["usuario"]
+        nombre_completo = usuario.get("nombre", "")
+        verificado = f" {CYAN}✓{RESET}" if usuario.get("es_verificado") else ""
+        privado = f" {AMARILLO}🔒{RESET}" if usuario.get("es_privado") else ""
+
+        linea = f"  {GRIS}{i:3}.{RESET} @{nombre_usuario}{verificado}{privado}"
+        if nombre_completo:
+            linea += f" {GRIS}({nombre_completo}){RESET}"
+        print(linea)
+
+    if limite > 0 and total > limite:
+        print(f"\n  {GRIS}... y {total - limite} más (ver archivo completo){RESET}")
+
+    print(f"{'═' * 60}\n")
 
 
-def guardar_como_txt(no_seguidores: List[dict], nombre_archivo: str = None) -> Path:
-
+def guardar_como_txt(
+    no_seguidores: List[dict],
+    fans: List[dict] = None,
+    mutuos: List[dict] = None,
+    nombre_archivo: str = None,
+) -> Path:
+    """Guarda el reporte en formato TXT con links directos."""
     if nombre_archivo is None:
-        nombre_archivo = f"no_seguidores_{_obtener_fecha()}.txt"
-    
-    ruta_archivo = CARPETA_SALIDA / nombre_archivo
-    
-    with open(ruta_archivo, 'w', encoding='utf-8') as archivo:
-        archivo.write(f"# Reporte de No Seguidores\n")
-        archivo.write(f"# Creado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        archivo.write(f"# Total: {len(no_seguidores)}\n")
-        archivo.write("#" + "-" * 40 + "\n\n")
-        
-        for usuario in no_seguidores:
-            archivo.write(f"@{usuario['usuario']}\n")
-    
-    registro.info(f"Guardado en TXT: {ruta_archivo}")
-    return ruta_archivo
+        nombre_archivo = f"reporte_{_obtener_fecha()}.txt"
+
+    ruta = CARPETA_SALIDA / nombre_archivo
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with open(ruta, "w", encoding="utf-8") as f:
+        f.write(f"# Reporte de Instagram\n")
+        f.write(f"# Fecha: {ahora}\n")
+        f.write(f"{'#' + '─' * 50}\n\n")
+
+        # No seguidores
+        f.write(f"## NO TE SIGUEN ({len(no_seguidores)})\n\n")
+        for u in no_seguidores:
+            f.write(f"  @{u['usuario']}  →  instagram.com/{u['usuario']}\n")
+
+        # Fans
+        if fans:
+            f.write(f"\n## FANS - Te siguen pero no los sigues ({len(fans)})\n\n")
+            for u in fans:
+                f.write(f"  @{u['usuario']}  →  instagram.com/{u['usuario']}\n")
+
+        # Mutuos
+        if mutuos:
+            f.write(f"\n## MUTUOS ({len(mutuos)})\n\n")
+            for u in mutuos:
+                f.write(f"  @{u['usuario']}\n")
+
+    registro.info(f"Guardado TXT: {ruta}")
+    return ruta
 
 
 def guardar_como_json(
-    no_seguidores: List[dict], 
-    cantidad_siguiendo: int = 0,
-    cantidad_seguidores: int = 0,
-    nombre_archivo: str = None
+    no_seguidores: List[dict],
+    fans: List[dict] = None,
+    mutuos: List[dict] = None,
+    estadisticas: dict = None,
+    nombre_archivo: str = None,
 ) -> Path:
-
+    """Guarda el reporte completo en formato JSON."""
     if nombre_archivo is None:
-        nombre_archivo = f"no_seguidores_{_obtener_fecha()}.json"
-    
-    ruta_archivo = CARPETA_SALIDA / nombre_archivo
-    
+        nombre_archivo = f"reporte_{_obtener_fecha()}.json"
+
+    ruta = CARPETA_SALIDA / nombre_archivo
+
     reporte = {
-        'creado_el': datetime.now().isoformat(),
-        'datos': {
-            'cantidad_no_seguidores': len(no_seguidores),
-            'cantidad_siguiendo': cantidad_siguiendo,
-            'cantidad_seguidores': cantidad_seguidores,
-        },
-        'no_seguidores': no_seguidores,
+        "creado_el": datetime.now().isoformat(),
+        "estadisticas": estadisticas or {},
+        "no_seguidores": no_seguidores,
+        "fans": fans or [],
+        "mutuos": mutuos or [],
     }
-    
-    with open(ruta_archivo, 'w', encoding='utf-8') as archivo:
-        json.dump(reporte, archivo, indent=2, ensure_ascii=False)
-    
-    registro.info(f"Guardado en JSON: {ruta_archivo}")
-    return ruta_archivo
+
+    with open(ruta, "w", encoding="utf-8") as f:
+        json.dump(reporte, f, indent=2, ensure_ascii=False)
+
+    registro.info(f"Guardado JSON: {ruta}")
+    return ruta
 
 
 def guardar_todo(
     no_seguidores: List[dict],
-    cantidad_siguiendo: int = 0,
-    cantidad_seguidores: int = 0
+    fans: List[dict],
+    mutuos: List[dict],
+    estadisticas: dict,
 ) -> dict:
-
+    """Guarda los reportes en archivos TXT y JSON."""
     fecha = _obtener_fecha()
-    
-    mostrar_en_pantalla(no_seguidores)
-    
-    # Guardar en archivos
-    ruta_txt = guardar_como_txt(no_seguidores, f"no_seguidores_{fecha}.txt")
-    ruta_json = guardar_como_json(
-        no_seguidores, 
-        cantidad_siguiendo, 
-        cantidad_seguidores,
-        f"no_seguidores_{fecha}.json"
+
+    ruta_txt = guardar_como_txt(
+        no_seguidores, fans, mutuos,
+        f"reporte_{fecha}.txt"
     )
-    
-    return {
-        'txt': ruta_txt,
-        'json': ruta_json,
-    }
+    ruta_json = guardar_como_json(
+        no_seguidores, fans, mutuos, estadisticas,
+        f"reporte_{fecha}.json"
+    )
+
+    return {"txt": ruta_txt, "json": ruta_json}
